@@ -1,0 +1,41 @@
+site_name: ${{ values.name }}
+site_description: ${{ values.description }}
+
+nav:
+  - Home: overview/index.md
+  - Overview: overview/index.md
+  - Devices:
+      - Component: devices/component.md
+      - List Device: devices/list-device.md
+  - Design:
+      - Topology: design/topology.md
+      - Tech Stack: design/techstack.md
+  - Operations:
+      - Configuration: operations/configuration.md
+      - Maintenance: operations/maintenance.md
+      - Troubleshooting: operations/troubleshooting.md
+  - Glossary: glossary.md
+  - Reference: reference.md
+
+theme:
+  name: material
+
+plugins:
+  - techdocs-core
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - attr_list
+  - md_in_html
+
+extra_css:
+  - stylesheets/extra.css 

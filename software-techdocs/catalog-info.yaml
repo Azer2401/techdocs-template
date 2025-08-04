@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: ${{ values.repoSlug }}
+    ${{ values.kubernetesAnnotations }}
+spec:
+  lifecycle: production
+  owner: ${{ values.owner }}
+  type: ${{ values.type }} 

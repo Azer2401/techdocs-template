@@ -1,0 +1,123 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: software-techdocs-template
+  title: Software Documentation Template
+  description: Template untuk membuat dokumentasi software menggunakan MkDocs
+  tags:
+    - recommended
+    - techdocs
+    - documentation
+    - software
+spec:
+  owner: platform-team
+  type: service
+  parameters:
+    - title: Project Information
+      required:
+        - name
+        - description
+        - type
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Nama dokumentasi/project
+          pattern: '^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$'
+        description:
+          title: Description
+          type: string
+          description: Deskripsi singkat tentang project
+        owner:
+          title: Owner
+          type: string
+          description: Tim atau individu yang bertanggung jawab
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group, User]
+        type:
+          title: Type
+          type: string
+          description: Jenis software (service, library, cli, website, dsb)
+          enum:
+            - service
+            - library
+            - cli
+            - website
+            - other
+          default: service
+        deployKubernetes:
+          title: Dideploy di Kubernetes?
+          type: boolean
+          description: Centang jika software ini akan dideploy di Kubernetes
+          default: false
+        kubernetesNamespace:
+          title: Kubernetes Namespace
+          type: string
+          description: Namespace Kubernetes (jika dideploy di Kubernetes)
+          ui:widget: hidden
+        kubernetesPod:
+          title: Kubernetes Pod Name
+          type: string
+          description: Nama Pod utama (jika dideploy di Kubernetes)
+          ui:widget: hidden
+    - title: Repository Information
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - user:email
+                  - repo
+            allowedHosts:
+              - github.com
+              - gitlab.com
+
+  steps:
+    - id: fetch
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          type: ${{ parameters.type }}
+          repoSlug: ${{ parameters.repoUrl }}
+          kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
+          kubernetesPod: ${{ parameters.kubernetesPod }}
+          deployKubernetes: ${{ parameters.deployKubernetes }}
+
+    - id: publish
+      name: Create Pull Request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        title: "Add documentation structure"
+        description: ${{ parameters.description }}
+        branchName: add-docs-${{ parameters.name }}
+        targetPath: ""
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
