@@ -3,7 +3,6 @@ kind: Location
 metadata:
   name: techdocs-templates
 spec:
-  type: url
+  type: file
   targets:
-    - https://github.com/rhdh-demo-gh/templates/blob/main/software-techdocs/template.yaml
-    - https://github.com/rhdh-demo-gh/templates/blob/main/hardware-techdocs/template.yaml
+    - ./**/template.yaml
