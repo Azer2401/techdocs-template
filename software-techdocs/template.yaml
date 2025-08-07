@@ -71,12 +71,6 @@ spec:
           type: string
           ui:field: RepoUrlPicker
           ui:options:
-            requestUserCredentials:
-              secretsKey: USER_OAUTH_TOKEN
-              additionalScopes:
-                github:
-                  - user:email
-                  - repo
             allowedHosts:
               - github.com
               - gitlab.com
@@ -86,7 +80,7 @@ spec:
       name: Fetch Base
       action: fetch:template
       input:
-        url: ./skeleton
+        url: https://github.com/Azer2401/techdocs-template/software-techdocs/skeleton
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
