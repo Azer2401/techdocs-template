@@ -3,6 +3,5 @@ kind: Location
 metadata:
   name: techdocs-templates
 spec:
-  type: file
   targets:
     - ./**/template.yaml
