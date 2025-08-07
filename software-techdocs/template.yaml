@@ -92,12 +92,6 @@ spec:
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesPod: ${{ parameters.kubernetesPod }}
           deployKubernetes: ${{ parameters.deployKubernetes }}
-          # Generate kubernetesAnnotations only if deployKubernetes is true
-          kubernetesAnnotations: ${{ parameters.deployKubernetes && (
-            'backstage.io/kubernetes-id: ' + parameters.name + '\\n' +
-            (parameters.kubernetesNamespace ? 'backstage.io/kubernetes-namespace: ' + parameters.kubernetesNamespace + '\\n' : '') +
-            (parameters.kubernetesPod ? 'backstage.io/kubernetes-pod: ' + parameters.kubernetesPod : '')
-          ) }}
 
     - id: publish
       name: Create Pull Request

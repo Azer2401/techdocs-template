@@ -6,7 +6,15 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.repoSlug }}
-    ${{ values.kubernetesAnnotations }}
+    {{#if values.deployKubernetes}}
+    backstage.io/kubernetes-id: ${{ values.name }}
+    {{#if values.kubernetesNamespace}}
+    backstage.io/kubernetes-namespace: ${{ values.kubernetesNamespace }}
+    {{/if}}
+    {{#if values.kubernetesPod}}
+    backstage.io/kubernetes-pod: ${{ values.kubernetesPod }}
+    {{/if}}
+    {{/if}}
 spec:
   lifecycle: production
   owner: ${{ values.owner }}
