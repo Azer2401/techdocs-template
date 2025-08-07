@@ -1,11 +1,11 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: software-techdocs-template
-  title: Software Documentation Template
-  description: Template untuk membuat dokumentasi software menggunakan MkDocs
+  name: software-division-doc-template
+  title: Software Documentation Standard Template
+  description: Standarisasi dokumentasi software division, otomatis setup struktur MkDocs & TechDocs.
   tags:
-    - recommended
+    - division-standard
     - techdocs
     - documentation
     - software
@@ -18,11 +18,12 @@ spec:
         - name
         - description
         - type
+        - owner
       properties:
         name:
-          title: Name
+          title: Project Name
           type: string
-          description: Nama dokumentasi/project
+          description: Nama dokumentasi/project (lowercase, dash allowed)
           pattern: '^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$'
         description:
           title: Description
@@ -69,6 +70,7 @@ spec:
         repoUrl:
           title: Repository Location
           type: string
+          description: Pilih repository yang sudah ada atau buat baru
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -77,7 +79,7 @@ spec:
 
   steps:
     - id: fetch
-      name: Fetch Base
+      name: Fetch Documentation Skeleton
       action: fetch:template
       input:
         url: https://github.com/Azer2401/techdocs-template/software-techdocs/skeleton
@@ -90,13 +92,19 @@ spec:
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesPod: ${{ parameters.kubernetesPod }}
           deployKubernetes: ${{ parameters.deployKubernetes }}
+          # Generate kubernetesAnnotations only if deployKubernetes is true
+          kubernetesAnnotations: ${{ parameters.deployKubernetes && (
+            'backstage.io/kubernetes-id: ' + parameters.name + '\\n' +
+            (parameters.kubernetesNamespace ? 'backstage.io/kubernetes-namespace: ' + parameters.kubernetesNamespace + '\\n' : '') +
+            (parameters.kubernetesPod ? 'backstage.io/kubernetes-pod: ' + parameters.kubernetesPod : '')
+          ) }}
 
     - id: publish
       name: Create Pull Request
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        title: "Add documentation structure"
+        title: "Add standardized documentation structure"
         description: ${{ parameters.description }}
         branchName: add-docs-${{ parameters.name }}
         targetPath: ""

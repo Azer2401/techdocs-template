@@ -1,11 +1,11 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: hardware-techdocs-template
-  title: Hardware Documentation Template
-  description: Template untuk membuat dokumentasi hardware menggunakan MkDocs
+  name: hardware-division-doc-template
+  title: Hardware Documentation Standard Template
+  description: Standarisasi dokumentasi hardware division, otomatis setup struktur MkDocs & TechDocs.
   tags:
-    - recommended
+    - division-standard
     - techdocs
     - documentation
     - hardware
@@ -18,11 +18,12 @@ spec:
         - name
         - description
         - type
+        - owner
       properties:
         name:
-          title: Name
+          title: Project Name
           type: string
-          description: Nama dokumentasi/project
+          description: Nama dokumentasi/project (lowercase, dash allowed)
           pattern: '^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$'
         description:
           title: Description
@@ -54,6 +55,7 @@ spec:
         repoUrl:
           title: Repository Location
           type: string
+          description: Pilih repository yang sudah ada atau buat baru
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -62,7 +64,7 @@ spec:
 
   steps:
     - id: fetch
-      name: Fetch Base
+      name: Fetch Documentation Skeleton
       action: fetch:template
       input:
         url: https://github.com/Azer2401/techdocs-template/hardware-techdocs/skeleton
@@ -78,7 +80,7 @@ spec:
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        title: "Add documentation structure"
+        title: "Add standardized documentation structure"
         description: ${{ parameters.description }}
         branchName: add-docs-${{ parameters.name }}
         targetPath: ""
