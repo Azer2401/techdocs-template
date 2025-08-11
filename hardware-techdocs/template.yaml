@@ -67,7 +67,7 @@ spec:
       name: Fetch Documentation Skeleton
       action: fetch:template
       input:
-        url: https://github.com/Azer2401/techdocs-template/hardware-techdocs/skeleton
+        url: https://github.com/Azer2401/techdocs-template/tree/main/hardware-techdocs/skeleton
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
