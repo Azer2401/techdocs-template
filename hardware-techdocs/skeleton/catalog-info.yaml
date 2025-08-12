@@ -3,10 +3,19 @@ kind: Component
 metadata:
   name: ${{ values.name }}
   description: ${{ values.description }}
+  {{#if values.tags}}
+  tags:
+    {{#each values.tags}}
+    - {{this}}
+    {{/each}}
+  {{/if}}
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.repoSlug }}
 spec:
-  lifecycle: production
+  type: documentation
+  lifecycle: ${{ values.lifecycle }}
   owner: ${{ values.owner }}
-  type: ${{ values.type }} 
+  {{#if values.system}}
+  system: ${{ values.system }}
+  {{/if}}

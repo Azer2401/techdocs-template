@@ -1,119 +1,162 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: software-division-doc-template
-  title: Software Documentation Standard Template
-  description: Standarisasi dokumentasi software division, otomatis setup struktur MkDocs & TechDocs.
-  tags:
-    - division-standard
-    - techdocs
-    - documentation
-    - software
+  name: software-techdocs-template
+  title: "Software TechDocs + Catalog"
+  description: "Buat repo dokumentasi software (TechDocs) + catalog-info.yaml, opsional dengan anotasi Kubernetes."
+  tags: [techdocs, documentation, software]
 spec:
-  owner: platform-team
-  type: service
+  owner: group:platform
+  type: documentation
+
   parameters:
-    - title: Project Information
-      required:
-        - name
-        - description
-        - type
-        - owner
+    - title: Project Info
+      required: [name, description, type, lifecycle]
       properties:
         name:
-          title: Project Name
+          title: Name
           type: string
-          description: Nama dokumentasi/project (lowercase, dash allowed)
-          pattern: '^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$'
+          description: Nama service / product (dipakai untuk componentId).
+          ui:field: EntityNamePicker
+          ui:options:
+            allowedKinds: [Component]
         description:
           title: Description
           type: string
-          description: Deskripsi singkat tentang project
+          description: Deskripsi singkat dokumentasi software.
+        type:
+          title: Component Type
+          type: string
+          default: service
+          enum: [service, website, library, tool, documentation, other]
+        lifecycle:
+          title: Lifecycle
+          type: string
+          description: Pilih lifecycle komponen.
+          default: production
+          enum: [develop, production]
+        tags:
+          title: Tags
+          type: array
+          items:
+            type: string
+          default: ["techdocs", "software"]
+
+    - title: Catalog Metadata
+      required: [owner]
+      properties:
         owner:
           title: Owner
           type: string
-          description: Tim atau individu yang bertanggung jawab
+          description: Owner katalog (mis. user:alice atau group:platform).
           ui:field: OwnerPicker
           ui:options:
-            catalogFilter:
-              kind: [Group, User]
-        type:
-          title: Type
+            allowedKinds: [Group, User]
+        system:
+          title: System
           type: string
-          description: Jenis software (service, library, cli, website, dsb)
-          enum:
-            - service
-            - library
-            - cli
-            - website
-            - other
-          default: service
+          description: (Opsional) system Backstage.
+        domain:
+          title: Domain
+          type: string
+          description: (Opsional) domain Backstage.
+
+    - title: Deployment (Kubernetes)
+      properties:
         deployKubernetes:
-          title: Dideploy di Kubernetes?
+          title: Apakah di-deploy di Kubernetes?
           type: boolean
-          description: Centang jika software ini akan dideploy di Kubernetes
           default: false
         kubernetesNamespace:
           title: Kubernetes Namespace
           type: string
-          description: Namespace Kubernetes (jika dideploy di Kubernetes)
-          ui:widget: hidden
-        kubernetesPod:
-          title: Kubernetes Pod Name
+          description: Isi jika deployKubernetes = true.
+        kubernetesCluster:
+          title: Kubernetes Cluster (opsional)
           type: string
-          description: Nama Pod utama (jika dideploy di Kubernetes)
-          ui:widget: hidden
-    - title: Repository Information
-      required:
-        - repoUrl
+          description: Isi jika ingin anotasi cluster spesifik.
+
+    - title: Repository
+      required: [repoUrl, repoSlug]
       properties:
         repoUrl:
           title: Repository Location
           type: string
-          description: Pilih repository yang sudah ada atau buat baru
+          description: Target repo GitHub (format: github.com?owner=<org>&repo=<repo>).
           ui:field: RepoUrlPicker
           ui:options:
-            allowedHosts:
-              - github.com
-              - gitlab.com
+            allowedHosts: [github.com]
+        repoSlug:
+          title: GitHub Project Slug
+          type: string
+          description: Format owner/repo (dipakai untuk annotation github.com/project-slug).
+          examples: ["my-org/my-service"]
+        defaultBranch:
+          title: Default Branch
+          type: string
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          default: private
+          enum: [private, public]
 
   steps:
-    - id: fetch
-      name: Fetch Documentation Skeleton
+    - id: fetchBase
+      name: Fetch & Template skeleton
       action: fetch:template
       input:
-        url: https://github.com/Azer2401/techdocs-template/tree/main/software-techdocs/skeleton
+        url: ./skeleton
+        copyWithoutRender:
+          - .github/**
+          - docs/stylesheets/**
         values:
+          # canonical identifiers
           name: ${{ parameters.name }}
+          componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
           owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          domain: ${{ parameters.domain }}
+          lifecycle: ${{ parameters.lifecycle }}
           type: ${{ parameters.type }}
-          repoSlug: ${{ parameters.repoUrl }}
-          kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
-          kubernetesPod: ${{ parameters.kubernetesPod }}
+          tags: ${{ parameters.tags }}
+
+          # repo / annotations
+          repoSlug: ${{ parameters.repoSlug }}
+
+          # kubernetes conditionals
           deployKubernetes: ${{ parameters.deployKubernetes }}
+          kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
+          kubernetesCluster: ${{ parameters.kubernetesCluster }}
+
+          # techdocs/mkdocs values
+          site_name: ${{ parameters.name }}
+          repo_main_branch: ${{ parameters.defaultBranch }}
 
     - id: publish
-      name: Create Pull Request
-      action: publish:github:pull-request
+      name: Publish to GitHub
+      action: publish:github
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        title: "Add standardized documentation structure"
-        description: ${{ parameters.description }}
-        branchName: add-docs-${{ parameters.name }}
-        targetPath: ""
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        protectDefaultBranch: true
 
     - id: register
-      name: Register in Catalog
+      name: Register in Backstage Catalog
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: '/catalog-info.yaml'
+        catalogInfoPath: /catalog-info.yaml
 
   output:
     links:
-      - title: Repository
+      - title: Open Repository
         url: ${{ steps.publish.output.remoteUrl }}
-      - title: Open in catalog
+      - title: Open in Catalog
         icon: catalog
         entityRef: ${{ steps.register.output.entityRef }}
+    text:
+      - "Repo: ${{ steps.publish.output.remoteUrl }}"
+      - "Entity: ${{ steps.register.output.entityRef }}"

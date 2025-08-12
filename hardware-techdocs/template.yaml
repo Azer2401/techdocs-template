@@ -1,101 +1,133 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: hardware-division-doc-template
-  title: Hardware Documentation Standard Template
-  description: Standarisasi dokumentasi hardware division, otomatis setup struktur MkDocs & TechDocs.
-  tags:
-    - division-standard
-    - techdocs
-    - documentation
-    - hardware
+  name: hardware-techdocs-template
+  title: "Hardware TechDocs + Catalog"
+  description: "Buat repo dokumentasi hardware (TechDocs) + catalog-info.yaml (tanpa anotasi Kubernetes)."
+  tags: [techdocs, documentation, hardware]
 spec:
-  owner: platform-team
-  type: service
+  owner: group:platform
+  type: documentation
+
   parameters:
-    - title: Project Information
-      required:
-        - name
-        - description
-        - type
-        - owner
+    - title: Project Info
+      required: [name, description, lifecycle]
       properties:
         name:
-          title: Project Name
+          title: Name
           type: string
-          description: Nama dokumentasi/project (lowercase, dash allowed)
-          pattern: '^([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$'
+          description: Nama project / produk hardware (dipakai untuk componentId).
+          ui:field: EntityNamePicker
+          ui:options:
+            allowedKinds: [Component]
         description:
           title: Description
           type: string
-          description: Deskripsi singkat tentang hardware project
+        lifecycle:
+          title: Lifecycle
+          type: string
+          default: production
+          enum: [develop, production]
+        tags:
+          title: Tags
+          type: array
+          items:
+            type: string
+          default: ["techdocs", "hardware"]
+
+    - title: Catalog Metadata
+      required: [owner]
+      properties:
         owner:
           title: Owner
           type: string
-          description: Tim atau individu yang bertanggung jawab
+          description: Owner katalog (mis. user:alice atau group:platform).
           ui:field: OwnerPicker
           ui:options:
-            catalogFilter:
-              kind: [Group, User]
-        type:
-          title: Type
+            allowedKinds: [Group, User]
+        system:
+          title: System
           type: string
-          description: Jenis hardware (device, component, system, dsb)
-          enum:
-            - device
-            - component
-            - system
-            - infrastructure
-            - other
-          default: device
-    - title: Repository Information
-      required:
-        - repoUrl
+          description: (Opsional) system Backstage.
+        domain:
+          title: Domain
+          type: string
+          description: (Opsional) domain Backstage.
+
+    - title: Repository
+      required: [repoUrl, repoSlug]
       properties:
         repoUrl:
           title: Repository Location
           type: string
-          description: Pilih repository yang sudah ada atau buat baru
+          description: Target repo GitHub (format: github.com?owner=<org>&repo=<repo>).
           ui:field: RepoUrlPicker
           ui:options:
-            allowedHosts:
-              - github.com
-              - gitlab.com
+            allowedHosts: [github.com]
+        repoSlug:
+          title: GitHub Project Slug
+          type: string
+          description: Format owner/repo (dipakai untuk annotation github.com/project-slug).
+          examples: ["my-org/hw-docs"]
+        defaultBranch:
+          title: Default Branch
+          type: string
+          default: main
+        repoVisibility:
+          title: Repository Visibility
+          type: string
+          default: private
+          enum: [private, public]
 
   steps:
-    - id: fetch
-      name: Fetch Documentation Skeleton
+    - id: fetchBase
+      name: Fetch & Template skeleton
       action: fetch:template
       input:
-        url: https://github.com/Azer2401/techdocs-template/tree/main/hardware-techdocs/skeleton
+        url: ./skeleton
+        copyWithoutRender:
+          - .github/**
+          - docs/stylesheets/**
         values:
           name: ${{ parameters.name }}
+          componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
           owner: ${{ parameters.owner }}
-          type: ${{ parameters.type }}
-          repoSlug: ${{ parameters.repoUrl }}
+          system: ${{ parameters.system }}
+          domain: ${{ parameters.domain }}
+          lifecycle: ${{ parameters.lifecycle }}
+          tags: ${{ parameters.tags }}
+
+          # repo / annotations (tanpa kubernetes)
+          repoSlug: ${{ parameters.repoSlug }}
+
+          # techdocs/mkdocs
+          site_name: ${{ parameters.name }}
+          repo_main_branch: ${{ parameters.defaultBranch }}
 
     - id: publish
-      name: Create Pull Request
-      action: publish:github:pull-request
+      name: Publish to GitHub
+      action: publish:github
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        title: "Add standardized documentation structure"
-        description: ${{ parameters.description }}
-        branchName: add-docs-${{ parameters.name }}
-        targetPath: ""
+        defaultBranch: ${{ parameters.defaultBranch }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        protectDefaultBranch: true
 
     - id: register
-      name: Register in Catalog
+      name: Register in Backstage Catalog
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: '/catalog-info.yaml'
+        catalogInfoPath: /catalog-info.yaml
 
   output:
     links:
-      - title: Repository
+      - title: Open Repository
         url: ${{ steps.publish.output.remoteUrl }}
-      - title: Open in catalog
+      - title: Open in Catalog
         icon: catalog
         entityRef: ${{ steps.register.output.entityRef }}
+    text:
+      - "Repo: ${{ steps.publish.output.remoteUrl }}"
+      - "Entity: ${{ steps.register.output.entityRef }}"
