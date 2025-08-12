@@ -111,7 +111,6 @@ spec:
           - ".github/**"
           - "docs/stylesheets/**"
         values:
-          # canonical identifiers
           name: ${{ parameters.name }}
           componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
@@ -121,16 +120,10 @@ spec:
           lifecycle: ${{ parameters.lifecycle }}
           type: ${{ parameters.type }}
           tags: ${{ parameters.tags }}
-
-          # repo / annotations
           repoSlug: ${{ parameters.repoSlug }}
-
-          # kubernetes conditionals
           deployKubernetes: ${{ parameters.deployKubernetes }}
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesCluster: ${{ parameters.kubernetesCluster }}
-
-          # techdocs/mkdocs values
           site_name: ${{ parameters.name }}
           repo_main_branch: ${{ parameters.defaultBranch }}
 
@@ -147,8 +140,8 @@ spec:
       name: Register in Backstage Catalog
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
-        catalogInfoPath: /catalog-info.yaml
+        # Pakai blob URL agar tidak jadi .../tree/...
+        catalogInfoUrl: https://github.com/${{ parameters.repoSlug }}/blob/${{ parameters.defaultBranch }}/catalog-info.yaml
 
   output:
     links:
@@ -158,5 +151,7 @@ spec:
         icon: catalog
         entityRef: ${{ steps.register.output.entityRef }}
     text:
-      - "Repo: ${{ steps.publish.output.remoteUrl }}"
-      - "Entity: ${{ steps.register.output.entityRef }}"
+      - title: "Repository URL"
+        content: ${{ steps.publish.output.remoteUrl }}
+      - title: "Entity Ref"
+        content: ${{ steps.register.output.entityRef }}
