@@ -16,13 +16,14 @@ spec:
         name:
           title: Name
           type: string
-          description: Nama project / produk hardware (dipakai untuk componentId).
+          description: "Nama project / produk hardware (dipakai untuk componentId)."
           ui:field: EntityNamePicker
           ui:options:
             allowedKinds: [Component]
         description:
           title: Description
           type: string
+          description: "Deskripsi singkat dokumentasi hardware."
         lifecycle:
           title: Lifecycle
           type: string
@@ -41,18 +42,18 @@ spec:
         owner:
           title: Owner
           type: string
-          description: Owner katalog (mis. user:alice atau group:platform).
+          description: "Owner katalog (mis. user:alice atau group:platform)."
           ui:field: OwnerPicker
           ui:options:
             allowedKinds: [Group, User]
         system:
           title: System
           type: string
-          description: (Opsional) system Backstage.
+          description: "(Opsional) system Backstage."
         domain:
           title: Domain
           type: string
-          description: (Opsional) domain Backstage.
+          description: "(Opsional) domain Backstage."
 
     - title: Repository
       required: [repoUrl, repoSlug]
@@ -60,14 +61,14 @@ spec:
         repoUrl:
           title: Repository Location
           type: string
-          description: Target repo GitHub (format: github.com?owner=<org>&repo=<repo>).
+          description: "Target repo GitHub (format: github.com?owner=<org>&repo=<repo>)."
           ui:field: RepoUrlPicker
           ui:options:
-            allowedHosts: [github.com]
+            allowedHosts: ["github.com"]
         repoSlug:
           title: GitHub Project Slug
           type: string
-          description: Format owner/repo (dipakai untuk annotation github.com/project-slug).
+          description: "Format owner/repo (dipakai untuk annotation github.com/project-slug)."
           examples: ["my-org/hw-docs"]
         defaultBranch:
           title: Default Branch
@@ -86,8 +87,8 @@ spec:
       input:
         url: ./skeleton
         copyWithoutRender:
-          - .github/**
-          - docs/stylesheets/**
+          - ".github/**"
+          - "docs/stylesheets/**"
         values:
           name: ${{ parameters.name }}
           componentId: ${{ parameters.name | lower | replace(' ', '-') }}
