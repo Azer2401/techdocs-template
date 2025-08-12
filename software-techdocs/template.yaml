@@ -2,8 +2,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: software-techdocs-template
-  title: "Software TechDocs + Catalog"
-  description: "Buat repo dokumentasi software (TechDocs) + catalog-info.yaml, opsional dengan anotasi Kubernetes."
+  title: "Software TechDocs + Catalog (Add to existing repo)"
+  description: "Tambahkan TechDocs (docs/, mkdocs.yml, catalog-info.yaml) ke repository yang sudah ada lewat Pull Request. Opsional: anotasi Kubernetes."
   tags: [techdocs, documentation, software]
 spec:
   owner: group:platform
@@ -16,7 +16,7 @@ spec:
         name:
           title: Name
           type: string
-          description: "Nama service / product (dipakai untuk componentId)."
+          description: "Nama service / product (dipakai untuk componentId & kubernetes-id)."
           ui:field: EntityNamePicker
           ui:options:
             allowedKinds: [Component]
@@ -76,30 +76,41 @@ spec:
           type: string
           description: "Isi jika ingin anotasi cluster spesifik."
 
-    - title: Repository
+    - title: Repository (Existing)
       required: [repoUrl, repoSlug]
       properties:
         repoUrl:
-          title: Repository Location
+          title: Repository Location (existing)
           type: string
-          description: "Target repo GitHub (format: github.com?owner=<org>&repo=<repo>)."
+          description: "Repo GitHub yang sudah ada (format: github.com?owner=<org>&repo=<repo>)."
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts: ["github.com"]
         repoSlug:
           title: GitHub Project Slug
           type: string
-          description: "Format owner/repo (dipakai untuk annotation github.com/project-slug)."
+          description: "Format owner/repo (dipakai untuk annotation github.com/project-slug & PR)."
           examples: ["my-org/my-service"]
-        defaultBranch:
-          title: Default Branch
+        baseBranch:
+          title: Base Branch (PR target)
           type: string
           default: main
-        repoVisibility:
-          title: Repository Visibility
+        prBranchName:
+          title: Pull Request Branch
           type: string
-          default: private
-          enum: [private, public]
+          default: "add-techdocs-${{ parameters.name | lower | replace(' ', '-') }}"
+        createDraftPR:
+          title: Create PR as Draft?
+          type: boolean
+          default: true
+        prTitle:
+          title: Pull Request Title
+          type: string
+          default: "docs: add TechDocs skeleton"
+        prBody:
+          title: Pull Request Description
+          type: string
+          default: "Add TechDocs (docs/, mkdocs.yml, catalog-info.yaml) and optional Kubernetes annotations."
 
   steps:
     - id: fetchBase
@@ -111,6 +122,7 @@ spec:
           - ".github/**"
           - "docs/stylesheets/**"
         values:
+          # identifiers
           name: ${{ parameters.name }}
           componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
@@ -120,38 +132,40 @@ spec:
           lifecycle: ${{ parameters.lifecycle }}
           type: ${{ parameters.type }}
           tags: ${{ parameters.tags }}
+
+          # repo / annotations
           repoSlug: ${{ parameters.repoSlug }}
+
+          # kubernetes conditionals
           deployKubernetes: ${{ parameters.deployKubernetes }}
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesCluster: ${{ parameters.kubernetesCluster }}
-          site_name: ${{ parameters.name }}
-          repo_main_branch: ${{ parameters.defaultBranch }}
 
-    - id: publish
-      name: Publish to GitHub
-      action: publish:github
+          # techdocs/mkdocs
+          site_name: ${{ parameters.name }}
+
+    - id: openPr
+      name: Open Pull Request to existing repo
+      action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        defaultBranch: ${{ parameters.defaultBranch }}
-        repoVisibility: ${{ parameters.repoVisibility }}
-        protectDefaultBranch: true
+        branchName: ${{ parameters.prBranchName }}
+        title: ${{ parameters.prTitle }}
+        description: ${{ parameters.prBody }}
+        targetPath: "/"        # tempatkan skeleton di root repo (mkdocs.yml di root, docs/ di root)
+        update: true           # jika file sudah ada, commit akan meng-update (review di PR)
+        draft: ${{ parameters.createDraftPR }}
 
-    - id: register
-      name: Register in Backstage Catalog
-      action: catalog:register
-      input:
-        # Pakai blob URL agar tidak jadi .../tree/...
-        catalogInfoUrl: https://github.com/${{ parameters.repoSlug }}/blob/${{ parameters.defaultBranch }}/catalog-info.yaml
+    # (Opsional) Auto-register setelah merge: sengaja tidak dilakukan di sini
+    # karena file belum ada di base branch. Setelah PR di-merge,
+    # tambahkan lokasi lewat UI atau pakai location.yaml yang menunjuk ke catalog-info.yaml di base branch.
 
   output:
     links:
-      - title: Open Repository
-        url: ${{ steps.publish.output.remoteUrl }}
-      - title: Open in Catalog
-        icon: catalog
-        entityRef: ${{ steps.register.output.entityRef }}
+      - title: Open Pull Request
+        url: ${{ steps.openPr.output.pullRequestUrl }}
+      - title: Repository
+        url: ${{ steps.openPr.output.remoteUrl }}
     text:
-      - title: "Repository URL"
-        content: ${{ steps.publish.output.remoteUrl }}
-      - title: "Entity Ref"
-        content: ${{ steps.register.output.entityRef }}
+      - title: "Next step"
+        content: "Review & merge PR. Setelah merge, register catalog-info.yaml di Backstage jika belum terdaftar."
