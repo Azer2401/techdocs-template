@@ -118,7 +118,7 @@ spec:
       action: fetch:template
       input:
         url: ./skeleton
-        copyWithoutRender:
+        copyWithoutTemplating:
           - ".github/**"
           - "docs/stylesheets/**"
         values:
