@@ -3,12 +3,12 @@ kind: Component
 metadata:
   name: ${{ values.name }}
   description: ${{ values.description }}
-  {{#if values.tags}}
+  {% if values.tags and (values.tags | length) > 0 %}
   tags:
-    {{#each values.tags}}
-    - {{this}}
-    {{/each}}
-  {{/if}}
+  {% for tag in values.tags %}
+    - {{ tag }}
+  {% endfor %}
+  {% endif %}
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.repoSlug }}
@@ -16,6 +16,9 @@ spec:
   type: documentation
   lifecycle: ${{ values.lifecycle }}
   owner: ${{ values.owner }}
-  {{#if values.system}}
+  {% if values.system %}
   system: ${{ values.system }}
-  {{/if}}
+  {% endif %}
+  {% if values.domain %}
+  domain: ${{ values.domain }}
+  {% endif %}
