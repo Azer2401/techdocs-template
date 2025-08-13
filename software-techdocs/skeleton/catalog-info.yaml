@@ -3,31 +3,14 @@ kind: Component
 metadata:
   name: ${{ values.name }}
   description: ${{ values.description }}
-  {% if values.tags and (values.tags | length) > 0 %}
-  tags:
-  {% for tag in values.tags %}
-    - {{ tag }}
-  {% endfor %}
-  {% endif %}
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.repoSlug }}
-    {% if values.deployKubernetes %}
+    {{#if values.deployKubernetes}}
     backstage.io/kubernetes-id: ${{ values.name }}
-    {% if values.kubernetesNamespace %}
     backstage.io/kubernetes-namespace: ${{ values.kubernetesNamespace }}
-    {% endif %}
-    {% if values.kubernetesCluster %}
-    backstage.io/kubernetes-cluster: ${{ values.kubernetesCluster }}
-    {% endif %}
-    {% endif %}
+    {{/if}}
 spec:
-  type: ${{ values.type }}
   lifecycle: ${{ values.lifecycle }}
   owner: ${{ values.owner }}
-  {% if values.system %}
-  system: ${{ values.system }}
-  {% endif %}
-  {% if values.domain %}
-  domain: ${{ values.domain }}
-  {% endif %}
+  type: ${{ values.type }}
