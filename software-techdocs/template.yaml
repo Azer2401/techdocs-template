@@ -149,12 +149,14 @@ spec:
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
+        # hitung di sini, hindari default param yang berisi ekspresi
         branchName: ${{ parameters.prBranchName }}
         title: ${{ parameters.prTitle }}
         description: ${{ parameters.prBody }}
-        targetPath: "/"        # tempatkan skeleton di root repo (mkdocs.yml di root, docs/ di root)
-        update: true           # jika file sudah ada, commit akan meng-update (review di PR)
+        targetPath: "/"
+        update: true
         draft: ${{ parameters.createDraftPR }}
+
 
     # (Opsional) Auto-register setelah merge: sengaja tidak dilakukan di sini
     # karena file belum ada di base branch. Setelah PR di-merge,
