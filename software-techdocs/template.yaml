@@ -118,6 +118,8 @@ spec:
       action: fetch:template
       input:
         url: ./skeleton
+        copyWithoutRender:
+          - .github/workflows/*
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
@@ -126,7 +128,7 @@ spec:
           lifecycle: ${{ parameters.lifecycle }}
           deployKubernetes: ${{ parameters.deployKubernetes }}
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
-          repoSlug: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+          repoSlug: ${{ (parameters.repoUrl | parseRepoUrl)['owner'] }}/${{ (parameters.repoUrl | parseRepoUrl)['repo'] }}
 
     - id: publish
       name: Publish to Repository

@@ -6,10 +6,10 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.repoSlug }}
-    {{#if values.deployKubernetes}}
+{%- if values.deployKubernetes %}
     backstage.io/kubernetes-id: ${{ values.name }}
     backstage.io/kubernetes-namespace: ${{ values.kubernetesNamespace }}
-    {{/if}}
+{%- endif %}
 spec:
   lifecycle: ${{ values.lifecycle }}
   owner: ${{ values.owner }}
