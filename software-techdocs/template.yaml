@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name: software-techdocs-template
   title: "Software TechDocs + Catalog (Add to existing repo)"
-  description: "Tambahkan TechDocs (docs/, mkdocs.yml, catalog-info.yaml) ke repository yang sudah ada lewat Pull Request. Opsional: anotasi Kubernetes."
+  description: "Tambahkan TechDocs software (docs/, mkdocs.yml, catalog-info.yaml) ke repository yang sudah ada lewat Pull Request. Opsional: anotasi Kubernetes."
   tags: [techdocs, documentation, software]
 spec:
   owner: group:platform
@@ -91,11 +91,6 @@ spec:
           type: string
           description: "Format owner/repo (untuk annotation github.com/project-slug & PR)."
           examples: ["org-name/repo-name"]
-        baseBranch:
-          title: Base Branch (PR target)
-          type: string
-          description: "Biasanya default branch repo."
-          default: main
         createDraftPR:
           title: Create PR as Draft?
           type: boolean
@@ -119,6 +114,7 @@ spec:
           - ".github/**"
           - "docs/stylesheets/**"
         values:
+          # identifiers
           name: ${{ parameters.name }}
           componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
@@ -128,10 +124,16 @@ spec:
           lifecycle: ${{ parameters.lifecycle }}
           type: ${{ parameters.type }}
           tags: ${{ parameters.tags }}
+
+          # repo / annotations
           repoSlug: ${{ parameters.repoSlug }}
+
+          # kubernetes conditionals
           deployKubernetes: ${{ parameters.deployKubernetes }}
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesCluster: ${{ parameters.kubernetesCluster }}
+
+          # techdocs/mkdocs
           site_name: ${{ parameters.name }}
 
     - id: openPr
@@ -139,11 +141,12 @@ spec:
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        baseBranch: ${{ parameters.baseBranch }}
+        # base PR akan mengikuti default branch repo (property baseBranch tidak tersedia di 1.38.1)
         branchName: add-techdocs-${{ parameters.name | lower | replace(' ', '-') }}
         title: ${{ parameters.prTitle }}
         description: ${{ parameters.prBody }}
-        targetPath: "."     # <— PENTING: relative path, bukan "/"
+        targetPath: "."     # penting: path relatif (tanpa leading slash)
+        sourcePath: "."     # kirim semua hasil render workspace
         update: true
         draft: ${{ parameters.createDraftPR }}
 
