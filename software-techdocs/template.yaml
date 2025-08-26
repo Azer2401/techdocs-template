@@ -119,7 +119,6 @@ spec:
           - ".github/**"
           - "docs/stylesheets/**"
         values:
-          # identifiers
           name: ${{ parameters.name }}
           componentId: ${{ parameters.name | lower | replace(' ', '-') }}
           description: ${{ parameters.description }}
@@ -129,16 +128,10 @@ spec:
           lifecycle: ${{ parameters.lifecycle }}
           type: ${{ parameters.type }}
           tags: ${{ parameters.tags }}
-
-          # repo / annotations
           repoSlug: ${{ parameters.repoSlug }}
-
-          # kubernetes conditionals
           deployKubernetes: ${{ parameters.deployKubernetes }}
           kubernetesNamespace: ${{ parameters.kubernetesNamespace }}
           kubernetesCluster: ${{ parameters.kubernetesCluster }}
-
-          # techdocs/mkdocs
           site_name: ${{ parameters.name }}
 
     - id: openPr
@@ -146,16 +139,13 @@ spec:
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        # hitung nama branch di sini (hindari ekspresi di default parameter)
+        baseBranch: ${{ parameters.baseBranch }}
         branchName: add-techdocs-${{ parameters.name | lower | replace(' ', '-') }}
         title: ${{ parameters.prTitle }}
         description: ${{ parameters.prBody }}
-        targetPath: "/"
+        targetPath: "."     # <— PENTING: relative path, bukan "/"
         update: true
         draft: ${{ parameters.createDraftPR }}
-        # NOTE: action ini biasanya memakai default branch repo sebagai base.
-        # Jika perlu paksa base branch tertentu di versi Backstage kamu,
-        # tambahkan: baseBranch: ${{ parameters.baseBranch }}
 
   output:
     links:
